@@ -1,0 +1,210 @@
+---
+title: Learning Classification Algorithm using Titanic Dataset
+jupyter: python3
+---
+
+In this blog we will learn some classfication algorithm using the famous titanic dataset
+<ul>
+<li> dataset: https://www.kaggle.com/competitions/titanic/data </li>
+<li> task: build a predictive model that predict whether a person survive in the titanic insident based on several factors (e.g., name, age, cabin, etc.) </li>
+</ul>
+We will learn some basic data exploration technique, feature engineering, and classification algorithm
+
+```{python}
+import os
+import pandas as pd
+import numpy as np
+import seaborn as sns
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+from scipy import stats
+from scipy.stats import norm, skew
+from sklearn.preprocessing import LabelEncoder
+from datetime import datetime
+
+import warnings
+warnings.filterwarnings('ignore')
+```
+
+## Data Exploration
+
+Lets see the preview of the dataset
+
+```{python}
+df_train = pd.read_csv('data/train.csv')
+df_train.head()
+```
+
+```{python}
+df_test = pd.read_csv('data/test.csv')
+df_test.head()
+```
+
+Now let's see some pattern on the dataset
+
+```{python}
+sns.barplot(x=df_train['Sex'], y=df_train['Survived']) 
+```
+
+Based on the plot above we can see that female are much more likely to survive compared to men
+
+Now let's find the correlation among the features on the data using heatmap
+
+```{python}
+sns.heatmap(df_train.corr(),annot=True) 
+fig=plt.gcf()
+plt.show()
+```
+
+Based on the heatmap above we can see that "PClass" and "Fare" is highly correlated to the "Survived" column, whereas other column is not highly correlated with "Survived" column. <br>
+But since "Fare" also highly correlated with "PClass" then we just need "PClass" column
+
+## Feature Engineering
+
+Based on our data exploration above we will only use column "Sex" and "PClass" to predict the survival of each person since those two features are highly correlated with the survival
+
+So here is the step of feature engineering that we will do:
+
+1. Convert "Sex" column into a 0/1 valued column since this column has a categorical data ("female/male"). We can call this column "IsMale"
+2. Create new column TicketFreq based on column Ticket. Will explain about this later
+3. Drop columns other unnecessary column
+
+```{python}
+## Create new column "IsMale"
+
+df_train_transformed = df_train.copy()
+df_train_transformed["IsMale"] = df_train["Sex"].apply(lambda x: x == "male")
+df_train_transformed.head()
+```
+
+Ticket Frequency is a ticket-based feature that includes people who have the same ticket number. This feature can serve as group size as it puts people who travel with the same ticket number together, whether they are related or not.
+
+```{python}
+df_train_transformed['TicketFreq'] = df_train.groupby('Ticket')['Ticket'].transform('count')
+```
+
+```{python}
+## Drop unwanted columns
+df_train_transformed = df_train_transformed.drop(['PassengerId','Ticket', 'Sex', 'Name', 'Fare', 'Age', 'Parch', 'SibSp','Cabin', 'Embarked'], axis=1) 
+df_train_transformed.head()
+```
+
+Since we need to do the same feature engineering process on the test dataset, so let's wrap all the process into a single function
+
+```{python}
+def transform_data(df, is_train_dataset = True):
+    df_transformed = df.copy()
+    df_transformed["IsMale"] = df["Sex"].apply(lambda x: x == "male")
+    
+    df_transformed['TicketFreq'] = df_train.groupby('Ticket')['Ticket'].transform('count')
+    
+    df_transformed = df_transformed.drop(['Ticket', 'Sex', 'Name', 'Fare', 'Age', 'Parch', 'SibSp','Cabin', 'Embarked'], axis=1) 
+    
+    if (is_train_dataset):
+        df_transformed = df_transformed.drop(['PassengerId'],axis=1)
+    
+    return df_transformed
+```
+
+```{python}
+temp_df = transform_data(df_train)
+temp_df.head()
+```
+
+```{python}
+sns.barplot(x='IsMale', y='Survived', data=temp_df) 
+```
+
+```{python}
+sns.barplot(x='TicketFreq', y='Survived', data=temp_df) 
+```
+
+```{python}
+sns.barplot(x='Pclass', y='Survived', data=temp_df) 
+```
+
+## Model Training
+In this part we will experiment with several classifier model
+
+To measure performance we will split the training data into `train` and `test`. So we will not touch the real `test` dataset to measure performance during our training process, this is to prevent data test leak. We will use 80/20 train-test split
+
+```{python}
+predictors = ['IsMale', 'Pclass', 'TicketFreq']
+label = 'Survived'
+```
+
+```{python}
+df_train_transformed = transform_data(df_train)
+
+X = df_train_transformed[predictors]
+y = df_train_transformed[label]
+```
+
+```{python}
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+```
+
+```{python}
+from sklearn.ensemble import RandomForestClassifier
+
+model = RandomForestClassifier()
+
+model.fit(X_train, y_train)
+predictions = model.predict(X_test)
+```
+
+```{python}
+from sklearn import metrics
+
+print('Accuracy:', metrics.accuracy_score(y_test, predictions))
+print('Precision:', metrics.precision_score(y_test,predictions))
+print('Recall:', metrics.recall_score(y_test, predictions))
+print('F1:', metrics.f1_score(y_test, predictions))
+```
+
+```{python}
+from sklearn.tree import DecisionTreeClassifier
+
+dt = DecisionTreeClassifier()
+dt.fit(X_train, y_train)
+predictions = dt.predict(X_test)
+```
+
+```{python}
+print('Accuracy:', metrics.accuracy_score(y_test, predictions))
+print('Precision:', metrics.precision_score(y_test,predictions))
+print('Recall:', metrics.recall_score(y_test, predictions))
+print('F1:', metrics.f1_score(y_test, predictions))
+```
+
+Based on the comparison above, random forest classifier model gives better accuracy, that is why we will choose this model for our final prediction
+
+```{python}
+df_test_transformed = transform_data(df_test)
+X_test_submission = df_test_transformed[predictors]
+```
+
+```{python}
+model = RandomForestClassifier()
+
+model.fit(X, y)
+predictions = model.predict(X_test_submission)
+```
+
+```{python}
+output= pd.DataFrame (pd.DataFrame({
+    "PassengerId": df_test["PassengerId"],
+    "Survived": predictions}))
+output.head()
+```
+
+```{python}
+output.to_csv('FinalSubmission.csv', index=False)
+```
+
+Here is the result when we submit this to kaggle competition
+![image](pict/Screenshot_result.png)
+

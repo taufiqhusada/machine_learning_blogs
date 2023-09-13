@@ -1,0 +1,18 @@
+project:
+  type: website
+
+website:
+  title: "Machine Learning Blogs"
+  navbar:
+    left:
+      - href: website1/index.qmd
+        text: Classification
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+
+
