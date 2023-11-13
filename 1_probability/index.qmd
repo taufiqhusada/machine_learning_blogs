@@ -1,0 +1,98 @@
+---
+title: Random Variable And Probability
+jupyter: python3
+---
+
+
+
+1. We will explore some type of random variable.
+2. Then we will also use some probability techiniques (naive bayes) to do some prediction. We are gonna use customer behaviour dataset
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+```
+
+```{python}
+df = pd.read_csv('data/Customer_Behaviour.csv')
+```
+
+```{python}
+df
+```
+
+```{python}
+df.info()
+```
+
+## Random Variable
+
+```{python}
+df
+```
+
+### Continuous Random Variable
+
+```{python}
+# Plot histograms for each numeric feature
+numeric_features = df[['Age','EstimatedSalary']]
+numeric_features.hist(figsize=(10, 8), bins=20, grid=False)
+plt.suptitle('Histograms of Numeric Features')
+plt.show()
+```
+
+### Discrete Random Variable
+
+```{python}
+# Plot histogram for the 'Gender' feature
+plt.figure(figsize=(6, 4))
+df['Gender'].value_counts().plot(kind='bar', color=['skyblue', 'salmon'], edgecolor='black')
+plt.title('Histogram of Gender')
+plt.xlabel('Gender')
+plt.ylabel('Count')
+plt.show()
+```
+
+## Naive Bayes Algorithm
+
+```{python}
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Assuming your DataFrame is named 'df'
+# If not, replace 'df' with the actual name of your DataFrame
+
+# Selecting features and target variable
+X = df[['Gender', 'Age', 'EstimatedSalary']]
+y = df['Purchased']
+
+# Convert categorical variable 'Gender' into numerical values using one-hot encoding
+X = pd.get_dummies(X, columns=['Gender'], drop_first=True)
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+```
+
+```{python}
+# Create a Gaussian Naive Bayes classifier
+model = GaussianNB()
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the performance of the model
+accuracy = accuracy_score(y_test, y_pred)
+conf_matrix = confusion_matrix(y_test, y_pred)
+classification_rep = classification_report(y_test, y_pred)
+
+print(f'Accuracy: {accuracy:.2f}')
+print(f'Confusion Matrix:\n{conf_matrix}')
+print(f'Classification Report:\n{classification_rep}')
+```
+
+

@@ -1,0 +1,132 @@
+---
+title: Outlier detection
+jupyter: python3
+---
+
+
+
+We will detect outlier in insurance charge prediction dataset then do some data cleaning and train regression model to predict insurance charges
+
+```{python}
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from xgboost import XGBRegressor
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+import matplotlib.pyplot as plt
+```
+
+```{python}
+df = pd.read_csv('data/insurance.csv')
+df
+```
+
+```{python}
+df.info()
+```
+
+```{python}
+# Plotting a histogram of the 'charges' column
+plt.figure(figsize=(8, 6))
+plt.hist(df['charges'], bins=30, color='skyblue', edgecolor='black')
+plt.title('Distribution of Charges')
+plt.xlabel('Charges')
+plt.ylabel('Frequency')
+plt.grid(True)
+plt.show()
+```
+
+## Outlier Detection using IQR method
+
+```{python}
+# Calculate the Interquartile Range (IQR)
+Q1 = df['charges'].quantile(0.25)
+Q3 = df['charges'].quantile(0.75)
+IQR = Q3 - Q1
+
+# Define the boundaries for outliers
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+# Find outliers
+outliers_iqr = df[(df['charges'] < lower_bound) | (df['charges'] > upper_bound)]
+
+# Plotting the boxplot for charges
+plt.figure(figsize=(8, 6))
+plt.boxplot(df['charges'], vert=False)
+plt.title('Boxplot of Charges with IQR Outliers')
+plt.xlabel('Charges')
+plt.yticks([1], ['Charges'])
+plt.scatter(outliers_iqr['charges'], [1] * len(outliers_iqr), color='red', label='Outliers')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+print("Outliers using IQR method:")
+print(outliers_iqr)
+```
+
+```{python}
+print(f"Number of outliers using IQR method: {len(outliers_iqr)}")
+print(f"Lower Bound: {lower_bound}")
+print(f"Upper Bound: {upper_bound}")
+```
+
+## Data preprocessing, filter outlier, and train models
+
+```{python}
+##Converting objects labels into categorical
+df[['sex', 'smoker', 'region']] = df[['sex', 'smoker', 'region']].astype('category')
+df.dtypes
+```
+
+```{python}
+##Converting category labels into numerical using LabelEncoder
+from sklearn.preprocessing import LabelEncoder
+label = LabelEncoder()
+label.fit(df.sex.drop_duplicates())
+df.sex = label.transform(df.sex)
+label.fit(df.smoker.drop_duplicates())
+df.smoker = label.transform(df.smoker)
+label.fit(df.region.drop_duplicates())
+df.region = label.transform(df.region)
+df.dtypes
+```
+
+```{python}
+# Filter outliers
+data_filtered = df[(df['charges'] >= lower_bound) & (df['charges'] <= upper_bound)]
+# data_filtered = df
+
+# Split data into features and target variable
+X = data_filtered.drop(['charges'], axis=1)  # Features
+y = data_filtered['charges']  # Target variable
+```
+
+```{python}
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize and fit the polynomial regression model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Predict charges using the model
+y_pred = model.predict(X_test)
+
+# Evaluate the model using different metrics
+r2 = r2_score(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = mean_squared_error(y_test, y_pred, squared=False)
+
+print(f"R^2 Score: {r2}")
+print(f"Mean Absolute Error (MAE): {mae}")
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"Root Mean Squared Error (RMSE): {rmse}")
+```
+
+

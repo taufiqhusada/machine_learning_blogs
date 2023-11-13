@@ -6,5 +6,9 @@ title: "Machine Learning Blogs"
 - Course: Machine Learning CS 5805 
 
 <h2> List of blogs: </h2>
+1. [Probability theory and random variables](1_probability/index.qmd): Exploring some types of random variable and uses some probability theory techiniques (naive bayes) to do some prediction
+2. [Clustering](2_clustering/index.qmd): Clustering consumer based on consumer income and spending
+3. [Linear and nonlinear regression](3_regression/index.qmd): Regression to predict car price
+4. [Classification](4_classification/index.qmd): End-to-end machine learning projects using classification algorithm on titanic dataset
+5. [Anomaly/outlier detection](5_outlier/index.qmd): Detect outlier in insurance charge prediction dataset then do some data cleaning and train regression model to predict insurance charges
 
-1. [Classification](website1/index.qmd): End-to-end machine learning projects using classification algorithm on titanic dataset

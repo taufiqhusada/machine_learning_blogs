@@ -1,0 +1,87 @@
+---
+title: Clustering using Mall Customers Dataset
+jupyter: python3
+---
+
+In here we will learn about clustering using K-means algorithm
+
+```{python}
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import LabelEncoder
+import matplotlib.pyplot as plt
+```
+
+```{python}
+df = pd.read_csv('data/Mall_Customers.csv')
+df
+```
+
+## Dataset explanation
+- CustomerID: Unique identification number for each customer.
+- Gender: Categorical variable indicating the gender of the customer.
+- Age: The age of the customer represented as an integer.
+- Annual Income (k$): Represents the annual income of the customer in thousands of dollars.
+- Spending Score (1-100): An index or score (ranging from 1 to 100) that measures a customer's spending behavior.
+
+```{python}
+df.info()
+```
+
+```{python}
+#| scrolled: true
+# Selecting the features for clustering
+features = df.iloc[:, 2:]  # Selecting columns from 'Age' onward
+```
+
+```{python}
+features
+```
+## K-means
+
+```{python}
+# Using the Elbow method to find the optimal number of clusters
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', random_state=42)
+    kmeans.fit(features)
+    wcss.append(kmeans.inertia_)
+```
+
+```{python}
+# Plotting the Elbow method graph to determine the optimal number of clusters
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), wcss, marker='o', linestyle='--')
+plt.title('Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')  # Within cluster sum of squares
+plt.show()
+```
+
+```{python}
+# Based on the elbow method, select the optimal number of clusters
+optimal_num_clusters = 5
+```
+
+```{python}
+# Apply KMeans with the selected number of clusters
+kmeans = KMeans(n_clusters=optimal_num_clusters, init='k-means++', random_state=42)
+kmeans.fit(features)
+```
+
+```{python}
+# Add a column in the original DataFrame to show the cluster each data point belongs to
+df['Cluster'] = kmeans.labels_
+```
+
+```{python}
+# Visualize the clusters (considering 'Annual Income (k$)' and 'Spending Score')
+plt.figure(figsize=(8, 6))
+plt.scatter(df['Annual Income (k$)'], df['Spending Score (1-100)'], c=df['Cluster'], cmap='viridis')
+plt.title('KMeans Clustering')
+plt.xlabel('Annual Income (k$)')
+plt.ylabel('Spending Score (1-100)')
+plt.show()
+```
+
+

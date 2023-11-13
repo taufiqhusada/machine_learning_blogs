@@ -5,14 +5,19 @@ website:
   title: "Machine Learning Blogs"
   navbar:
     left:
-      - href: website1/index.qmd
+      - href: 1_probability/index.qmd
+        text: Probability & Random Variables
+      - href: 2_clustering/index.qmd
+        text: Clustering
+      - href: 3_regression/index.qmd
+        text: Regression
+      - href: 4_classification/index.qmd
         text: Classification
+      - href: 5_outlier/index.qmd
+        text: Outlier detection
 
 format:
   html:
     theme: cosmo
     css: styles.css
     toc: true
-
-
-
